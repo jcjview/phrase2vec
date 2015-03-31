@@ -425,7 +425,7 @@ void LearnVocabFromTestFile() {
     /*   a = AddWordToVocab(word); */
     /*   vocab[a].cn = 1; */
     /* } else vocab[i].cn++; */
-    if(i == eol_index || (train_words % MAX_SENTENCE_LENGTH == 0)) 
+    if(i == eol_index/* || (train_words % MAX_SENTENCE_LENGTH == 0)*/) 
       curr_sen = AddSentenceToPhrases(test_file, "none");
     if (i != eol_index) AddWordToSentence(curr_sen, word);
     //if (vocab_size > vocab_hash_size * 0.7) ReduceVocab();
