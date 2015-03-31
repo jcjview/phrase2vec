@@ -26,7 +26,7 @@
 #define MAX_STRING 100
 #define EXP_TABLE_SIZE 1000
 #define MAX_EXP 6
-#define MAX_SENTENCE_LENGTH 2000
+#define MAX_SENTENCE_LENGTH 30000
 #define MAX_CODE_LENGTH 40
 
 const int vocab_hash_size = 30000000;  // Maximum 30 * 0.7 = 21M words in the vocabulary
@@ -187,6 +187,18 @@ int AddWordToSentence(int index, char *word) {
   strcpy(phrases[index].words[sen_index], word);
   phrases[index].word_count++;
   return phrases[index].word_count - 1;
+}
+
+void SentencePrint(){
+	FILE *fo = fopen("test.txt", "wb");
+	int s,w;
+	for(s=0;s<phrase_size;s++){
+		for(w=0;w<phrases[s].word_count;w++){
+			fprintf(fo,"%s ",phrases[s].words[w]);
+		}
+		fprintf(fo,"$\n");
+	}
+	fclose(fo);
 }
 
 int AddSentenceToPhrases(const char *file_name, const char *label) {
@@ -357,10 +369,17 @@ void LearnVocabFromTrainFile() {
       a = AddWordToVocab(word);
       vocab[a].cn = 1;
     } else vocab[i].cn++;
-    if(i == eol_index || (train_words % MAX_SENTENCE_LENGTH == 0)) 
+    if(i == eol_index/*|| (train_words % MAX_SENTENCE_LENGTH == 0)*/) {
       curr_sen = AddSentenceToPhrases(train_file, "none");
-    else AddWordToSentence(curr_sen, word);
-    if (vocab_size > vocab_hash_size * 0.7) ReduceVocab();
+    }
+    else
+    	AddWordToSentence(curr_sen, word);
+    if (vocab_size > vocab_hash_size * 0.7)
+    	ReduceVocab();
+  }
+  //delete last empty sentence.
+  if(phrases[phrase_size-1].word_count<1){
+	  phrase_size--;
   }
   SortVocab();
   if (debug_mode > 0) {
@@ -370,6 +389,10 @@ void LearnVocabFromTrainFile() {
   }
   file_size = ftell(fin);
   fclose(fin);
+#ifndef NDEBUG
+  if (debug_mode > 1)
+	  SentencePrint();
+#endif
 }
 
 void LearnVocabFromTestFile() {
@@ -874,7 +897,7 @@ void TrainModel() {
   for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);
   printf("\nCompleted training. Now outputting vectors.\n");
   fo = fopen(para_file, "wb");
-  fo = fopen(para_file, "wb");
+//  fo = fopen(para_file, "wb");
   fprintf(fo, "%lld %lld %lld\n", labeled_instances, layer1_size, label_size);
   for (a = 0; a < phrase_size; a++) {
     int arr[label_size];
@@ -1011,6 +1034,9 @@ int ArgPos(char *str, int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
+#ifndef NDEBUG
+	printf("\t debug mode\n");
+#endif
   int i;
   if (argc == 1) {
     printf("WORD VECTOR estimation toolkit v 0.1b\n\n");
@@ -1112,5 +1138,6 @@ int main(int argc, char **argv) {
   free(vocab);
   free(vocab_hash);
   free(expTable);
+  printf("\ndone.\n");
   return 0;
 }
